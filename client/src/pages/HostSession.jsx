@@ -1,7 +1,7 @@
-import React, { useEffect, useRef, useState } from "react";
+import React, { useCallback, useEffect, useRef, useState } from "react";
 import { useSession } from "../context/sessionContext";
 import { useAuth } from "../context/AuthContext";
-import { useNavigate, useSearchParams } from "react-router-dom";
+import { useSearchParams } from "react-router-dom";
 import { useZego } from "../hooks/useZego";
 import { API_ENDPOINTS, APP_CONFIG, ROUTES } from "../utils/constants";
 import { copyToClipboard } from "../utils/helpers";
@@ -17,12 +17,16 @@ const HostSession = () => {
   const [sessionInfo, setSessionInfo] = useState(null);
   const [loading, setLoading] = useState(true);
   const [copied, setCopied] = useState(false);
+
+  const zegoJoinedRef = useRef(false);
+  const cleanupStartedRef = useRef(false);
+  const sessionEndedRef = useRef(false);
+  const isPageLeavingRef = useRef(false);
+
   const { currentSession, getSession, clearSession } = useSession();
   const { user } = useAuth();
-  const navigate = useNavigate();
-  const [searchParams] = useSearchParams();
-  const zegoJoinedRef = useRef(false);
 
+  const [searchParams] = useSearchParams();
   const roomId = searchParams.get("roomId") || currentSession?.roomId;
 
   const {
@@ -35,9 +39,36 @@ const HostSession = () => {
     leaveZegoRoom,
   } = useZego();
 
+  const wait = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+
+  const hardRedirect = useCallback((path) => {
+    window.location.replace(path);
+  }, []);
+
+  const cleanupZegoOnly = useCallback(async () => {
+    if (cleanupStartedRef.current) return;
+
+    cleanupStartedRef.current = true;
+
+    try {
+      if (zegoJoinedRef.current) {
+        await leaveZegoRoom();
+        zegoJoinedRef.current = false;
+      }
+
+      await wait(1500);
+    } catch (error) {
+      console.error("Zego cleanup error:", error);
+    } finally {
+      cleanupStartedRef.current = false;
+    }
+  }, [leaveZegoRoom]);
+
   const handleFullScreen = () => {
     const videoContainer = containerRef.current;
+
     if (!videoContainer) return;
+
     if (document.fullscreenElement) {
       document.exitFullscreen?.();
     } else {
@@ -45,18 +76,17 @@ const HostSession = () => {
     }
   };
 
-  //load session information
-
   useEffect(() => {
     let isMounted = true;
 
     const loadSession = async () => {
       if (!roomId) {
-        navigate(ROUTES.DASHBOARD);
+        hardRedirect(ROUTES.DASHBOARD);
         return;
       }
 
       setLoading(true);
+
       const result = await getSession(roomId);
 
       if (!isMounted) return;
@@ -64,65 +94,71 @@ const HostSession = () => {
       if (result.success) {
         setSessionInfo(result.session);
       } else {
-        navigate(ROUTES.DASHBOARD);
+        hardRedirect(ROUTES.DASHBOARD);
       }
+
       setLoading(false);
     };
+
     loadSession();
 
     return () => {
       isMounted = false;
     };
-  }, [roomId, getSession, navigate]);
-
-  //JOIN ZEGGO room after container is mounted adn session is loaded
+  }, [roomId, getSession, hardRedirect]);
 
   useEffect(() => {
-    if (!sessionInfo || !roomId || zegoJoinedRef.current) {
+    if (
+      !sessionInfo ||
+      !roomId ||
+      zegoJoinedRef.current ||
+      isPageLeavingRef.current
+    ) {
       return;
     }
 
     let isMounted = true;
-    let retryTimout = null;
+    let retryTimeout = null;
 
-    //wait for conatiner to be ready
     const joinZego = async () => {
-      if (containerRef.current && isMounted && !zegoJoinedRef.current) {
+      if (!isMounted || isPageLeavingRef.current) return;
+
+      if (containerRef.current && !zegoJoinedRef.current) {
         zegoJoinedRef.current = true;
+
         const zegoResult = await joinZegoRoom(roomId);
-        if (!isMounted) return;
+
+        if (!isMounted || isPageLeavingRef.current) return;
 
         if (!zegoResult.success) {
-          console.error("failed to join zego room ", zegoResult.error);
+          console.error("Failed to join zego room:", zegoResult.error);
           zegoJoinedRef.current = false;
         }
-      } else if (isMounted && !zegoJoinedRef.current) {
-        retryTimout = setTimeout(joinZego, 200);
+      } else if (!zegoJoinedRef.current) {
+        retryTimeout = setTimeout(joinZego, 200);
       }
     };
 
     joinZego();
 
-    //cleanup on unmount or roomId chnage
     return () => {
       isMounted = false;
-      if (retryTimout) {
-        clearTimeout(retryTimout);
-      }
 
-      if (zegoJoinedRef.current) {
-        leaveZegoRoom();
-        zegoJoinedRef.current = false;
+      if (retryTimeout) {
+        clearTimeout(retryTimeout);
       }
     };
-  }, [sessionInfo?.id, roomId]);
+  }, [sessionInfo?.id, roomId, joinZegoRoom, containerRef]);
 
-  //poll participant to keep list updated
   useEffect(() => {
-    if (!roomId) return;
+    if (!roomId || sessionEndedRef.current || isPageLeavingRef.current) return;
+
     const interval = setInterval(async () => {
+      if (isPageLeavingRef.current) return;
+
       const res = await getSession(roomId);
-      if (res.success && res.session) {
+
+      if (res.success && res.session && !isPageLeavingRef.current) {
         setSessionInfo((prev) => {
           if (
             prev &&
@@ -132,75 +168,116 @@ const HostSession = () => {
           ) {
             return prev;
           }
+
           return res.session;
         });
       }
-    }, 5000); //every 5s
+    }, 5000);
 
     return () => clearInterval(interval);
   }, [roomId, getSession]);
 
   const handleCopyRoomId = async () => {
-    if (roomId) {
-      const success = await copyToClipboard(roomId);
-      if (success) {
-        setCopied(true);
-        setTimeout(() => setCopied(false), 2000);
-      }
-    }
-  };
+    if (!roomId) return;
 
-  const getShareableLink = () => {
-    const baseURL = window.location.origin;
-    return `${baseURL}/${ROUTES.JOIN}?roomId=${roomId}`;
-  };
+    const success = await copyToClipboard(roomId);
 
-  const handleCopyLink = async () => {
-    const link = getShareableLink();
-    const success = await copyToClipboard(link);
     if (success) {
       setCopied(true);
       setTimeout(() => setCopied(false), 2000);
     }
   };
 
-  //hanle end session
+  const getShareableLink = () => {
+    const baseURL = window.location.origin;
+    return `${baseURL}${ROUTES.JOIN}?roomId=${roomId}`;
+  };
+
+  const handleCopyLink = async () => {
+    const success = await copyToClipboard(getShareableLink());
+
+    if (success) {
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    }
+  };
+
+  const goDashboardSafely = async () => {
+    isPageLeavingRef.current = true;
+
+    await cleanupZegoOnly();
+
+    clearSession();
+    setSessionInfo(null);
+
+    hardRedirect(ROUTES.DASHBOARD);
+  };
+
   const handleEndSession = async () => {
-    if (!sessionInfo || !sessionInfo.isHost) return;
+    if (sessionEndedRef.current) return;
+
+    sessionEndedRef.current = true;
+    isPageLeavingRef.current = true;
 
     try {
-      if (zegoJoinedRef.current) {
-        await leaveZegoRoom();
-        zegoJoinedRef.current = false;
+      await cleanupZegoOnly();
+
+      if (sessionInfo?.id && sessionInfo?.isHost) {
+        await api.post(`${API_ENDPOINTS.SESSION.END}/${sessionInfo.id}`);
+        toast.success("Session ended successfully");
       }
 
-      await api.post(`${API_ENDPOINTS.SESSION.END}/${sessionInfo.id}`);
       clearSession();
-      toast.success("session ended successfully");
-      navigate(ROUTES.DASHBOARD);
+      setSessionInfo(null);
+
+      hardRedirect(ROUTES.DASHBOARD);
     } catch (error) {
-      toast.error("failed to end session. Please try again");
+      console.error("End session error:", error);
+
+      clearSession();
+      setSessionInfo(null);
+
+      toast.error("Failed to end session. Please try again");
+      hardRedirect(ROUTES.DASHBOARD);
     }
   };
 
   const handleLeave = async () => {
-    if (sessionInfo?.isHost) {
-      handleEndSession();
-    } else {
-      if (zegoJoinedRef.current) {
-        await leaveZegoRoom();
-        zegoJoinedRef.current = false;
-      }
+    await handleEndSession();
+  };
 
-      await api.post(API_ENDPOINTS.SESSION.LEAVE, { roomId });
-      clearSession();
-      navigate(ROUTES.DASHBOARD);
+  const handleBack = async () => {
+    try {
+      await goDashboardSafely();
+    } catch (error) {
+      console.error("Back navigation error:", error);
+      hardRedirect(ROUTES.DASHBOARD);
     }
   };
 
-  const handleBack = () => {
-    navigate(ROUTES.DASHBOARD);
-  };
+  useEffect(() => {
+    const handleSafeNavigation = async (event) => {
+      try {
+        isPageLeavingRef.current = true;
+
+        await cleanupZegoOnly();
+
+        clearSession();
+        setSessionInfo(null);
+
+        hardRedirect(event.detail || ROUTES.DASHBOARD);
+      } catch (error) {
+        console.error("Safe navigation error:", error);
+        hardRedirect(event.detail || ROUTES.DASHBOARD);
+      }
+    };
+
+    window.addEventListener("safe-navigation", handleSafeNavigation);
+
+    return () => {
+      window.removeEventListener("safe-navigation", handleSafeNavigation);
+    };
+  }, [cleanupZegoOnly, clearSession, hardRedirect]);
 
   if (loading) {
     return (
@@ -215,9 +292,7 @@ const HostSession = () => {
     );
   }
 
-  if (!sessionInfo) {
-    return null;
-  }
+  if (!sessionInfo) return null;
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100">
@@ -226,7 +301,7 @@ const HostSession = () => {
         roomId={roomId}
         userName={user?.name}
         onBack={handleBack}
-        showEndBUtton={sessionInfo.isHost}
+        showEndButton={false}
         onEndSession={handleEndSession}
       />
 
@@ -251,18 +326,14 @@ const HostSession = () => {
               zegoLoading={zegoLoading}
               onFullscreen={handleFullScreen}
               onLeave={handleLeave}
-              leaveButtonText={
-                sessionInfo?.isHost
-                  ? APP_CONFIG.SESSION_CONTENT.VIDEO.END_BUTTON
-                  : APP_CONFIG.SESSION_CONTENT.VIDEO.LEAVE_BUTTON
-              }
+              leaveButtonText={APP_CONFIG.SESSION_CONTENT.VIDEO.END_BUTTON}
             />
           </div>
 
           <div className="lg:col-span-1">
             <ParticipantsList
-              participants={sessionInfo.participants}
-              hostName={sessionInfo.hostName}
+              participants={sessionInfo?.participants}
+              hostName={sessionInfo?.hostName}
             />
           </div>
         </div>

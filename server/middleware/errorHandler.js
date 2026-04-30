@@ -3,7 +3,7 @@
 
 const errorHandler = (err,req,res,next) => {
     let statusCode = err.statusCode || 500;
-    let message = err.message | 'Interval server error';
+    let message = err.message || 'Interval server error';
 
      //Mongoose validation error
     if(err.name === 'ValidationError'){

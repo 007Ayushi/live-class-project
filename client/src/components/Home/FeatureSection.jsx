@@ -22,9 +22,6 @@ const FeatureSection = () => {
                     {APP_CONFIG.HOME_CONTENT.FEATURES.DESCRIPTION}
 
                 </p>
-
-
-
             </div>
 
 

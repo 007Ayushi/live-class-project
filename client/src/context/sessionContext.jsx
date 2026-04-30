@@ -55,7 +55,6 @@ export const SessionProvider = ({children}) => {
 
 
     //get session
-
         const getSession = useCallback(async(roomId) => {
         try {
              setError(null);

@@ -68,7 +68,7 @@ const AuthForm = ({
             onSubmit={onSubmit}
           >
             {(error || localError) && (
-              <div className="bg-red-50 border-1-4 border-red-500 text-red-700 p-4 rounded-lg flex items-start">
+              <div className="bg-red-50 border-l-4 border-red-500 text-red-700 p-4 rounded-lg flex items-start">
                 <FaExclamationCircle className="w-5 h-5 mr-2 mt-0.5 flex-shrink-0" />
                 <span className="text-sm">{error || localError}</span>
               </div>
@@ -78,7 +78,7 @@ const AuthForm = ({
               <div>
                 <label
                   htmlFor="name"
-                  className="block tetx-sm font-medium text-gray-700 mb-2"
+                  className="block text-sm font-medium text-gray-700 mb-2"
                 >
                   Full Name
                 </label>
@@ -95,7 +95,7 @@ const AuthForm = ({
                     value={formData.name || ""}
                     onChange={onChange}
                     className="block w-full pl-10 pr-3  py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500 transition-colors"
-                    placeholder="John Doe"
+                    placeholder="Ayushi Gupta"
                   />
                 </div>
               </div>
@@ -103,8 +103,8 @@ const AuthForm = ({
 
             <div>
               <label
-                htmlFor="name"
-                className="block tetx-sm font-medium text-gray-700 mb-2"
+                htmlFor="email"
+                className="block text-sm font-medium text-gray-700 mb-2"
               >
                 Email Address
               </label>
@@ -121,7 +121,7 @@ const AuthForm = ({
                   value={formData.email || ""}
                   onChange={onChange}
                   className={`block w-full pl-10 pr-3  py-3 border border-gray-300 rounded-lg focus:ring-2  transition-colors ${isLogin ? "focus:ring-blue-500 focus:border-blue-500" : "focus:ring-purple-500 focus:border-purple-500"}`}
-                  placeholder="you@example.com"
+                  placeholder="ayushigupta@gmail.com"
                 />
               </div>
             </div>
@@ -129,8 +129,8 @@ const AuthForm = ({
 
                   <div>
               <label
-                htmlFor="name"
-                className="block tetx-sm font-medium text-gray-700 mb-2"
+                htmlFor="password"
+                className="block text-sm font-medium text-gray-700 mb-2"
               >
                 Password
               </label>
@@ -156,8 +156,8 @@ const AuthForm = ({
              {!isLogin && (
                        <div>
               <label
-                htmlFor="name"
-                className="block tetx-sm font-medium text-gray-700 mb-2"
+                htmlFor="confirmPassword"
+                className="block text-sm font-medium text-gray-700 mb-2"
               >
                 Confirm Password
               </label>
@@ -168,7 +168,7 @@ const AuthForm = ({
                 <input
                   id="confirmPassword"
                   name="confirmPassword"
-                  type="confirmPassword"
+                  type="password"
                   autoComplete='new-password'
                   required
                   value={formData.confirmPassword || ""}
@@ -190,7 +190,7 @@ const AuthForm = ({
             {loading ? (
                 <>
                   <FaSpinner className="animate-spin -ml-1 mr-3 h-5 w-5 text-white"/>
-                  {isLogin ? 'Signing...': 'Creating account...'}
+                  {isLogin ? 'Signing in...': 'Creating account...'}
                 </>
             ): (
                 isLogin ? 'Sign In' : 'Create Account'
@@ -226,3 +226,4 @@ const AuthForm = ({
 };
 
 export default AuthForm;
+

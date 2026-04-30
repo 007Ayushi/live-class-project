@@ -14,10 +14,9 @@ dotenv.config();
 const app =express();
 const PORT = process.env.PORT;
 
-
 const corsOption = {
-    origin: process.env.CLIENT_URL,
-    credentials:true
+    origin: process.env.CLIENT_URL || 'http://localhost:3000',
+    credentials: true
 }
 
 connectDb();
@@ -25,6 +24,8 @@ connectDb();
 app.use(cors(corsOption));
 app.use(express.json())
 app.use(express.urlencoded({extended:true}))
+
+
 
 app.get('/api/health', (req,res) => {
     res.json({

@@ -2,6 +2,13 @@ import mongoose from 'mongoose';
 
 
 const sessionSchema = new mongoose.Schema({
+    //Index helps to quickly find the session by roomId
+    //Index looks up the session by roomId, making it faster to find the session when a user tries to join using the roomId
+    //Unique ensures that no two sessions can have the same roomId
+    //Trim removes any leading or trailing whitespace from the roomId
+    //Required ensures that a session cannot be created without a roomId
+    //The roomId is a unique identifier for each session, allowing users to join the correct session when they enter the roomId
+    //The roomId is generated using a combination of random characters, ensuring that it is unique and difficult to guess
     roomId:{ type: String, required: true, unquie:true,trim:true,index:true },
     host: {
         type:mongoose.Schema.Types.ObjectId,
@@ -20,11 +27,11 @@ const sessionSchema = new mongoose.Schema({
     participants: [{
         userId:{
                type:mongoose.Schema.Types.ObjectId,
-        ref:'User',
+                ref:'User',
                 required:true
         },
         userName:{
-            type:String,
+                type:String,
                 required:true
 
         },
@@ -47,14 +54,13 @@ const sessionSchema = new mongoose.Schema({
 
 
 sessionSchema.statics.generateRoomId = function() {
-    const chars = 'ABDSICJHWLDICHWELFHNWFBC03830483048304';
+    const chars = 'ABCD16383JHDYBSNNH27362ANHDTB';
     let roomId = '';
     for(let i=0;i<12; i++){
         roomId+= chars.charAt(Math.floor(Math.random() * chars.length))
     }
     return roomId;
 }
-
 
 
 sessionSchema.statics.roomIdExists = async function(roomId) {

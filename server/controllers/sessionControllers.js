@@ -83,7 +83,7 @@ export const createSession = async (req, res, next) => {
     });
 
     res.status(201).json({
-      sucsess: true,
+      success: true,
       data: {
         session: {
           id: session._id,
@@ -261,7 +261,6 @@ export const endSession = async (req, res, next) => {
         session: {
           id: session._id,
           roomId: session.roomId,
-
           status: session.status,
           endedAt: session.endedAt,
         },
@@ -292,7 +291,7 @@ export const leaveSession = async (req, res, next) => {
       });
     }
 
-    session.participants =  session.participants.filter(
+    session.participants = session.participants.filter(
       (p) => p.userId.toString() !== userId.toString(),
     );
 

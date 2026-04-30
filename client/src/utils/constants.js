@@ -47,10 +47,10 @@ export const APP_CONFIG = {
   
   // Social Media Links
   SOCIAL_LINKS: {
-    GITHUB: 'https://github.com',
-    TWITTER: 'https://twitter.com',
-    LINKEDIN: 'https://linkedin.com',
-    EMAIL: 'mailto:support@liveclasses.com',
+    GITHUB: 'https://github.com/007Ayushi',
+    LEETCODE: 'https://leetcode.com/u/ayushiguptaLeetCode/',
+    LINKEDIN: 'https://www.linkedin.com/in/guptaayushi7/',
+    EMAIL: 'mailto:guptaayushi9693@gmail.com',
   },
   
   // Footer Links

@@ -3,9 +3,6 @@ import { generateToken } from "../utils/jwt.js";
 
 
 
-
-
-
 export const register = async (req,res,next) => {
     try {
         const {name, email, password} = req.body;
@@ -14,7 +11,7 @@ export const register = async (req,res,next) => {
         if(userExits){
             return res.status(400).json({
                 success:false,
-                error:'User already exists eith this email'
+                error:'User already exists with this email'
             })
         }
 
@@ -29,7 +26,7 @@ export const register = async (req,res,next) => {
         //generate token
         const token = generateToken(user._id);
 
-        res.status(201).json({
+        res.status(200).json({
             success:true,
             data:{
                 user:{
@@ -39,7 +36,7 @@ export const register = async (req,res,next) => {
                 },
                 token
             },
-            message:'User register successfully'
+            message:'User registered successfully'
         })
 
     } catch (error) {
@@ -60,8 +57,6 @@ export const login = async (req,res,next) => {
         }
 
                  //check if password matche
-
-
                  const isPasswordMatch = await user.matchPassword(password);
                  if(!isPasswordMatch){
                     return res.status(401).json({
@@ -71,12 +66,10 @@ export const login = async (req,res,next) => {
                  }
 
 
-
-
         //generate token
         const token = generateToken(user._id);
 
-        res.status(201).json({
+        res.status(200).json({
             success:true,
             data:{
                 user:{
@@ -94,21 +87,19 @@ export const login = async (req,res,next) => {
     }
 }
 
-
-
 export const getMe = async(req,res,next) => {
     try {
          const userId = req.user.userId;
          const user = await User.findById(userId);
          if(!user){
-                      return res.status(404).json({
+                return res.status(404).json({
                 success:false,
                 error:'User not found'
             })
          }
 
 
-                 res.status(201).json({
+            res.status(200).json({
             success:true,
             data:{
                 user:{
@@ -123,3 +114,4 @@ export const getMe = async(req,res,next) => {
         next(error)
     }
 }
+

@@ -45,20 +45,20 @@ router.post(
     JoinSession
 )
 
+//POST /api/session/end
+router.post('/end/:sessionId',endSession)
 
 //GET /api/session/:roomId
-
 router.get('/:roomId',getSession)
 
 
 
 
-//POST /api/session/end
-router.post('/end/:sessionId',endSession)
 
 
 
-//POST /api/auth/login
+
+//POST /api/session/leave
 
 router.post(
     '/leave',

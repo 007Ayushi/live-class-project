@@ -3,9 +3,9 @@ import {
   FaEnvelope,
   FaGithub,
   FaLinkedin,
-  FaTwitter,
   FaVideo,
 } from "react-icons/fa";
+import { SiLeetcode } from "react-icons/si";
 import { APP_CONFIG } from "../utils/constants";
 import { Link } from "react-router-dom";
 
@@ -40,13 +40,13 @@ const Footer = () => {
               </a>
 
               <a
-                href={APP_CONFIG.SOCIAL_LINKS.TWITTER}
+                href={APP_CONFIG.SOCIAL_LINKS.LEETCODE}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="w-10 h-10 bg-gray-800 rounded-lg flex items-center justify-center hover:bg-blue-600 transition-colors"
-                aria-label="Twitter"
+                aria-label="LeetCode"
               >
-                <FaTwitter className="w-5 h-5" />
+                <SiLeetcode className="w-5 h-5" />
               </a>
 
               <a

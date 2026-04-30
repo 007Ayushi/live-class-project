@@ -1,7 +1,7 @@
 import { createContext, useContext, useEffect, useState } from "react";
 import api from "../service/api";
 import { API_ENDPOINTS } from "../utils/constants";
-import { unstable_setDevServerHooks } from "react-router-dom";
+
 
 
 const AuthContext = createContext();
@@ -52,7 +52,7 @@ export const AuthProvider = ({ children }) => {
 
       return { success: true, user };
     } catch (error) {
-      const errorMessage = error.response.data?.error || "Registration failed";
+   const errorMessage = error?.response?.data?.error || "Registration failed";
       setError(errorMessage);
       return { success: false, error: errorMessage };
     } finally {
@@ -77,7 +77,7 @@ export const AuthProvider = ({ children }) => {
 
       return { success: true, user };
     } catch (error) {
-      const errorMessage = error.response.data?.error || "Login failed";
+     const errorMessage = error?.response?.data?.error || "Login failed";
       setError(errorMessage);
       return { success: false, error: errorMessage };
     } finally {
