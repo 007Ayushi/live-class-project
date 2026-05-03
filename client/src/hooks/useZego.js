@@ -24,13 +24,12 @@ export const useZego = () => {
 
   const clearVideoContainer = useCallback(() => {
     const container = containerRef.current;
-
     if (!container) return;
 
     try {
       container.innerHTML = "";
-    } catch (error) {
-      console.error("Clear video container error:", error);
+    } catch (err) {
+      console.error("Clear video container error:", err);
     }
   }, []);
 
@@ -40,13 +39,11 @@ export const useZego = () => {
     isLeavingRef.current = true;
 
     try {
-      await Promise.resolve(
-        leaveRoom(() => {
-          safeSetState(setUserHasJoined, false);
-        })
-      );
-    } catch (error) {
-      console.error("Error leaving Zego room:", error);
+      await leaveRoom(() => {
+        safeSetState(setUserHasJoined, false);
+      });
+    } catch (err) {
+      console.error("Error leaving Zego room:", err);
     } finally {
       joinedRoomIdRef.current = null;
 
@@ -55,9 +52,7 @@ export const useZego = () => {
       safeSetState(setLoading, false);
       safeSetState(setError, null);
 
-      setTimeout(() => {
-        clearVideoContainer();
-      }, 300);
+      setTimeout(clearVideoContainer, 300);
 
       isJoiningRef.current = false;
       isLeavingRef.current = false;
@@ -66,13 +61,16 @@ export const useZego = () => {
 
   const joinZegoRoom = useCallback(
     async (roomId) => {
+      const userId = user?.id || user?._id;
+      const userName = user?.name || user?.fullName || "Guest";
+
       if (!roomId) {
         const errorMessage = "Room ID is required";
         safeSetState(setError, errorMessage);
         return { success: false, error: errorMessage };
       }
 
-      if (!user?.id || !user?.name) {
+      if (!userId) {
         const errorMessage = "User details are missing";
         safeSetState(setError, errorMessage);
         return { success: false, error: errorMessage };
@@ -133,8 +131,8 @@ export const useZego = () => {
 
         await joinRoom(
           roomId,
-          user.id,
-          user.name,
+          userId,
+          userName,
           containerRef.current,
           () => {
             safeSetState(setUserHasJoined, true);
@@ -155,11 +153,11 @@ export const useZego = () => {
         safeSetState(setUserHasJoined, true);
 
         return { success: true };
-      } catch (error) {
-        console.error("Failed to join Zego room:", error);
+      } catch (err) {
+        console.error("Failed to join Zego room:", err);
 
         const errorMessage =
-          error?.message ||
+          err?.message ||
           "Failed to join room. Please check camera/microphone permission.";
 
         joinedRoomIdRef.current = null;
@@ -174,7 +172,7 @@ export const useZego = () => {
         safeSetState(setLoading, false);
       }
     },
-    [user?.id, user?.name, safeSetState, leaveZegoRoom]
+    [user?.id, user?._id, user?.name, user?.fullName, safeSetState, leaveZegoRoom]
   );
 
   useEffect(() => {
@@ -185,13 +183,11 @@ export const useZego = () => {
 
       try {
         leaveRoom();
-      } catch (error) {
-        console.error("Zego cleanup on unmount error:", error);
+      } catch (err) {
+        console.error("Zego cleanup on unmount error:", err);
       }
 
-      setTimeout(() => {
-        clearVideoContainer();
-      }, 300);
+      setTimeout(clearVideoContainer, 300);
 
       joinedRoomIdRef.current = null;
       isJoiningRef.current = false;

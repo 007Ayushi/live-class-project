@@ -17,11 +17,9 @@ function ProtectedRoute({ children }) {
     );
   }
 
-
-  if(!isAuthenticated){
-    return <Navigate to={ROUTES.HOME} replace/>
-  }
-
+if (!isAuthenticated) {
+  return <Navigate to={ROUTES.LOGIN} replace />;
+}
 
   return children;
 }

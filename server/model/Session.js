@@ -9,7 +9,7 @@ const sessionSchema = new mongoose.Schema({
     //Required ensures that a session cannot be created without a roomId
     //The roomId is a unique identifier for each session, allowing users to join the correct session when they enter the roomId
     //The roomId is generated using a combination of random characters, ensuring that it is unique and difficult to guess
-    roomId:{ type: String, required: true, unquie:true,trim:true,index:true },
+    roomId:{ type: String, required: true, unique: true,trim:true,index:true },
     host: {
         type:mongoose.Schema.Types.ObjectId,
         ref:'User',
