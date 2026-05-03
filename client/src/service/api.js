@@ -1,10 +1,16 @@
 import axios from "axios";
 
-const BASE_URL =
-  process.env.REACT_APP_API_URL || "https://live-class-project.onrender.com/api";
+// 🔥 Always prefer env variable (important for Render)
+const BASE_URL = process.env.REACT_APP_API_URL;
 
-console.log("API BASE URL:", BASE_URL);
+// 🛑 If env is missing, log error clearly
+if (!BASE_URL) {
+  console.error("❌ REACT_APP_API_URL is NOT set in environment variables");
+}
 
+console.log("✅ API BASE URL:", BASE_URL);
+
+// Create axios instance
 const api = axios.create({
   baseURL: BASE_URL,
   headers: {
@@ -12,6 +18,7 @@ const api = axios.create({
   },
 });
 
+// 🔐 Attach token automatically
 api.interceptors.request.use(
   (config) => {
     const token = localStorage.getItem("token");
@@ -25,10 +32,11 @@ api.interceptors.request.use(
   (error) => Promise.reject(error)
 );
 
+// ⚠️ Handle errors globally
 api.interceptors.response.use(
   (response) => response,
   (error) => {
-    console.log("API ERROR:", error?.response);
+    console.log("❌ API ERROR:", error?.response || error);
 
     if (error.response?.status === 401) {
       localStorage.removeItem("token");
