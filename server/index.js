@@ -14,6 +14,7 @@ const PORT = process.env.PORT || 8000;
 const allowedOrigins = [
   "http://localhost:3000",
   "http://localhost:5173",
+  "https://live-class-project-1.onrender.com",
   process.env.CLIENT_URL,
 ].filter(Boolean);
 
@@ -29,8 +30,6 @@ const corsOption = {
   },
   credentials: true,
 };
-
-connectDb();
 
 app.use(cors(corsOption));
 app.use(express.json());
